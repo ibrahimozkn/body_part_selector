@@ -3,36 +3,46 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'body_parts.freezed.dart';
 part 'body_parts.g.dart';
 
-/// A class representing the different parts of the body that can be selected,
-/// and whether they are.
+/// A class representing the different parts of the body and their associated
+/// pain level, with distinctions for front and back.
 @freezed
-class BodyParts with _$BodyParts {
-  /// Creates a new [BodyParts] object.
+abstract class BodyParts with _$BodyParts {
+  /// The maximum pain level that can be assigned to a body part.
+  static const maxPainLevel = 10;
+
   const factory BodyParts({
-    @Default(false) bool head,
-    @Default(false) bool neck,
-    @Default(false) bool leftShoulder,
-    @Default(false) bool leftUpperArm,
-    @Default(false) bool leftElbow,
-    @Default(false) bool leftLowerArm,
-    @Default(false) bool leftHand,
-    @Default(false) bool rightShoulder,
-    @Default(false) bool rightUpperArm,
-    @Default(false) bool rightElbow,
-    @Default(false) bool rightLowerArm,
-    @Default(false) bool rightHand,
-    @Default(false) bool upperBody,
-    @Default(false) bool lowerBody,
-    @Default(false) bool leftUpperLeg,
-    @Default(false) bool leftKnee,
-    @Default(false) bool leftLowerLeg,
-    @Default(false) bool leftFoot,
-    @Default(false) bool rightUpperLeg,
-    @Default(false) bool rightKnee,
-    @Default(false) bool rightLowerLeg,
-    @Default(false) bool rightFoot,
-    @Default(false) bool abdomen,
-    @Default(false) bool vestibular,
+    // Parts with front and back distinction
+    @Default(0) int headFront,
+    @Default(0) int headBack,
+    @Default(0) int neckFront,
+    @Default(0) int neckBack,
+    @Default(0) int chest, // Replaces upperBody front
+    @Default(0) int upperBack, // Replaces upperBody back
+    @Default(0) int abdomen, // Front only
+    @Default(0) int lowerBack, // Back only
+
+    // Limbs and other parts (can also be split if needed)
+    @Default(0) int leftShoulder,
+    @Default(0) int leftUpperArm,
+    @Default(0) int leftElbow,
+    @Default(0) int leftLowerArm,
+    @Default(0) int leftHand,
+    @Default(0) int rightShoulder,
+    @Default(0) int rightUpperArm,
+    @Default(0) int rightElbow,
+    @Default(0) int rightLowerArm,
+    @Default(0) int rightHand,
+    @Default(0) int pelvis, // Front of lowerBody
+    @Default(0) int buttocks, // Back of lowerBody
+    @Default(0) int leftUpperLeg,
+    @Default(0) int leftKnee,
+    @Default(0) int leftLowerLeg,
+    @Default(0) int leftFoot,
+    @Default(0) int rightUpperLeg,
+    @Default(0) int rightKnee,
+    @Default(0) int rightLowerLeg,
+    @Default(0) int rightFoot,
+    @Default(0) int vestibular,
   }) = _BodyParts;
 
   /// Creates a new [BodyParts] object from a JSON object.
@@ -40,62 +50,23 @@ class BodyParts with _$BodyParts {
       _$BodyPartsFromJson(json);
   const BodyParts._();
 
-  /// A constant representing a selection with all [BodyParts] selected.
-  static const all = BodyParts(
-    head: true,
-    neck: true,
-    leftShoulder: true,
-    leftUpperArm: true,
-    leftElbow: true,
-    leftLowerArm: true,
-    leftHand: true,
-    rightShoulder: true,
-    rightUpperArm: true,
-    rightElbow: true,
-    rightLowerArm: true,
-    rightHand: true,
-    upperBody: true,
-    lowerBody: true,
-    leftUpperLeg: true,
-    leftKnee: true,
-    leftLowerLeg: true,
-    leftFoot: true,
-    rightUpperLeg: true,
-    rightKnee: true,
-    rightLowerLeg: true,
-    rightFoot: true,
-    abdomen: true,
-    vestibular: true,
-  );
-
-  /// Toggles the BodyPart with the given [id].
-  ///
-  /// If [id] doesn't represent a valid BodyPart, this returns an unchanged
-  /// Object. If [mirror] is true, and the BodyPart is one that exists on both
-  /// sides (e.g. Knee), the other side is toggled as well.
-  BodyParts withToggledId(String id, {bool mirror = false}) {
+  /// Returns a new [BodyParts] object with the pain level for the given [id]
+  /// updated.
+  BodyParts withPainLevel(String id, int painLevel) {
     final map = toMap();
     if (!map.containsKey(id)) return this;
-    map[id] = !(map[id] ?? false);
-    if (mirror) {
-      if (id.contains("left")) {
-        final mirroredId =
-            id.replaceAll("left", "right").replaceAll("Left", "Right");
-        map[mirroredId] = map[id] ?? false;
-      } else if (id.contains("right")) {
-        final mirroredId =
-            id.replaceAll("right", "left").replaceAll("Right", "Left");
-        map[mirroredId] = map[id] ?? false;
-      }
-    }
+    map[id] = painLevel.clamp(0, maxPainLevel);
     return BodyParts.fromJson(map);
   }
 
   /// Returns a Map representation of this object.
-  ///
-  /// Similar to [toJson], but returns a Map<String, bool> instead of a
-  /// Map<String, dynamic>.
-  Map<String, bool> toMap() {
+  Map<String, int> toMap() {
     return toJson().cast();
+  }
+
+  /// Returns a list of the names of body parts that have a pain level
+  /// greater than 0.
+  List<String> get painfulParts {
+    return toMap().entries.where((e) => e.value > 0).map((e) => e.key).toList();
   }
 }

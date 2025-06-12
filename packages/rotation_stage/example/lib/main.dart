@@ -59,9 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Text(
                         side.map(
                           front: "Front",
-                          left: "Left",
                           back: "Back",
-                          right: "Right",
                         ),
                       ),
                     ),
