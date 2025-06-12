@@ -2,84 +2,106 @@ import 'package:body_part_selector/src/body_part_selector.dart';
 import 'package:body_part_selector/src/model/body_parts.dart';
 import 'package:body_part_selector/src/model/body_side.dart';
 import 'package:flutter/material.dart';
-import 'package:rotation_stage/rotation_stage.dart';
 
-export 'package:rotation_stage/rotation_stage.dart';
-
-/// A widget that allows for selecting body parts on a turnable body.
+/// A widget that displays front and back views of a body for selection.
 ///
-/// This widget is a wrapper around [RotationStage] and [BodyPartSelector].
-class BodyPartSelectorTurnable extends StatelessWidget {
+/// This widget provides a [SegmentedButton] to switch between [BodySide.front]
+/// and [BodySide.back] views.
+class BodyPartSelectorTurnable extends StatefulWidget {
   /// Creates a [BodyPartSelectorTurnable].
   const BodyPartSelectorTurnable({
     required this.bodyParts,
     super.key,
-    this.onSelectionUpdated,
-    this.mirrored = false,
-    this.selectedColor,
+    this.onPainChanged,
+    this.scale = WongBakerScale.english,
     this.unselectedColor,
-    this.selectedOutlineColor,
     this.unselectedOutlineColor,
-    this.padding = EdgeInsets.zero,
-    this.labelData,
+    this.padding = const EdgeInsets.all(16),
+    this.frontButtonText = 'Front',
+    this.backButtonText = 'Back',
+    this.frontButtonIcon = const Icon(Icons.face),
+    this.backButtonIcon = const Icon(Icons.face_retouching_natural),
   });
 
-  /// {@macro body_part_selector.body_parts}
+  /// The current selection of body parts with their pain levels.
   final BodyParts bodyParts;
 
-  /// {@macro body_part_selector.on_selection_updated}
-  final ValueChanged<BodyParts>? onSelectionUpdated;
+  /// Called when a pain level for a body part is updated via the dialog.
+  final void Function(String bodyPartId, int painLevel)? onPainChanged;
 
-  /// {@macro body_part_selector.mirrored}
-  final bool mirrored;
+  /// The configuration for the pain scale, including styles and translations.
+  final WongBakerScale scale;
 
-  /// {@macro body_part_selector.selected_color}
-  final Color? selectedColor;
-
-  /// {@macro body_part_selector.unselected_color}
-
+  /// The color of body parts with no pain.
   final Color? unselectedColor;
 
-  /// {@macro body_part_selector.selected_outline_color}
-
-  final Color? selectedOutlineColor;
-
-  /// {@macro body_part_selector.unselected_outline_color}
+  /// The color of the outline of body parts with no pain.
   final Color? unselectedOutlineColor;
 
   /// The padding around the rendered body.
   final EdgeInsets padding;
 
-  /// The labels for the sides of the [RotationStage].
-  final RotationStageLabelData? labelData;
+  /// The text for the front button.
+  final String frontButtonText;
+
+  /// The text for the back button.
+  final String backButtonText;
+
+  /// The icon for the front button. Can be null.
+  final Widget? frontButtonIcon;
+
+  /// The icon for the back button. Can be null.
+  final Widget? backButtonIcon;
+
+  @override
+  State<BodyPartSelectorTurnable> createState() =>
+      _BodyPartSelectorTurnableState();
+}
+
+class _BodyPartSelectorTurnableState extends State<BodyPartSelectorTurnable> {
+  BodySide _side = BodySide.front;
 
   @override
   Widget build(BuildContext context) {
-    return RotationStageLabels(
-      data: labelData ?? RotationStageLabelData.english,
-      child: RotationStage(
-        contentBuilder: (index, side, page) => Padding(
-          padding: padding,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: BodyPartSelector(
-              side: side.map(
-                front: BodySide.front,
-                left: BodySide.left,
-                back: BodySide.back,
-                right: BodySide.right,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: SegmentedButton<BodySide>(
+            segments: [
+              ButtonSegment(
+                icon: widget.frontButtonIcon,
+                value: BodySide.front,
+                label: Text(widget.frontButtonText),
               ),
-              bodyParts: bodyParts,
-              onSelectionUpdated: onSelectionUpdated,
-              mirrored: mirrored,
-              selectedColor: selectedColor,
-              unselectedColor: unselectedColor,
-              selectedOutlineColor: selectedOutlineColor,
-              unselectedOutlineColor: unselectedOutlineColor,
+              ButtonSegment(
+                icon: widget.backButtonIcon,
+                value: BodySide.back,
+                label: Text(widget.backButtonText),
+              ),
+            ],
+            selected: {_side},
+            onSelectionChanged: (newSelection) {
+              setState(() {
+                _side = newSelection.first;
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: widget.padding,
+            child: BodyPartSelector(
+              side: _side,
+              bodyParts: widget.bodyParts,
+              onPainChanged: widget.onPainChanged,
+              scale: widget.scale,
+              unselectedColor: widget.unselectedColor,
+              unselectedOutlineColor: widget.unselectedOutlineColor,
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
